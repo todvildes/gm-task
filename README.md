@@ -59,84 +59,54 @@ The application is a simple user management API with the following endpoints:
 
 ## Task Requirements
 
-### 1. Infrastructure as Code (Terraform)
+This task offers two deployment approaches. You may choose **either** the Lambda approach **OR** the EKS approach based on your expertise and preference.
 
-Create Terraform configurations to provision the following AWS resources:
+### Option 1: AWS Lambda Approach
+If you choose this approach, implement:
 
-1. VPC with proper networking setup:
-   - Public and private subnets
-   - NAT Gateway
-   - Internet Gateway
-   - Appropriate routing tables
+1. **Infrastructure as Code (Terraform)**
+   - VPC with proper networking setup (public/private subnets, NAT Gateway, Internet Gateway, routing tables)
+   - RDS PostgreSQL instance (in private subnets with security groups and backup configuration)
+   - Lambda function (with IAM roles, VPC configuration, environment variables)
+   - API Gateway (REST API configuration with Lambda integration)
+   - S3 bucket for query results storage
 
-2. EKS cluster:
-   - Node groups with appropriate instance types
-   - Required IAM roles and policies
-   - Security groups
+2. **CI/CD Pipeline (GitHub Actions)**
+   - Test the application
+   - Build and package Lambda function
+   - Deploy to Lambda and API Gateway
+   - Include error handling and notifications
 
-3. RDS PostgreSQL instance:
-   - In private subnets
-   - Appropriate security groups
-   - Backup configuration
+### Option 2: EKS Container Approach
+If you choose this approach, implement:
 
-4. Lambda function:
-   - Required IAM roles
-   - VPC configuration
-   - Environment variables
+1. **Infrastructure as Code (Terraform)**
+   - VPC with proper networking setup (public/private subnets, NAT Gateway, Internet Gateway, routing tables)
+   - EKS cluster (node groups, IAM roles/policies, security groups)
+   - RDS PostgreSQL instance (in private subnets with security groups and backup configuration)
+   - S3 bucket for query results storage
 
-5. API Gateway:
-   - REST API configuration
-   - Integration with Lambda
-   - Appropriate methods and resources
+2. **Kubernetes Deployment (Helm)**
+   - Deployment configuration (resource limits/requests, health checks, environment variables)
+   - Service configuration (service type, port configuration)
+   - Ingress configuration (TLS, path routing)
+   - Secrets management (database credentials, sensitive information)
+   - Horizontal Pod Autoscaling (CPU/Memory based scaling, min/max replicas)
 
-Requirements for Terraform code:
-- Use modules to organize your code
-- Implement proper state management
+3. **CI/CD Pipeline (GitHub Actions)**
+   - Test the application
+   - Build and push Docker image
+   - Deploy to EKS using Helm
+   - Include error handling and notifications
+
+### Requirements for All Code
+- Use modular organization
+- Implement proper state management (for Terraform)
 - Follow security best practices
 - Include variables for customization
-- Document your configuration
+- Provide comprehensive documentation
 
-### 2. Kubernetes Deployment (Helm)
-
-Create a Helm chart for deploying the application to EKS. The chart should include:
-
-1. Deployment configuration:
-   - Resource limits and requests
-   - Health checks
-   - Environment variables
-   - Proper container configuration
-
-2. Service configuration:
-   - Appropriate service type
-   - Port configuration
-
-3. Ingress configuration:
-   - TLS configuration
-   - Path routing
-
-4. Secrets management:
-   - Database credentials
-   - Other sensitive information
-
-5. Horizontal Pod Autoscaling:
-   - CPU/Memory based scaling
-   - Min/Max replicas
-
-Requirements for Helm chart:
-- Proper template organization
-- Configurable values
-- Documentation
-- Resource dependencies
-- Security considerations
-
-### 3. CI/CD Pipeline
-
-Set up a GitHub Actions workflow that:
-
-1. Tests the application
-2. Builds and pushes Docker image
-3. Deploys to both EKS and Lambda
-4. Includes proper error handling and notifications
+**Important**: Please clearly document which approach you've selected in your submission.
 
 ## Local Development
 
