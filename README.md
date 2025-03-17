@@ -184,12 +184,37 @@ docker run -p 8000:8000 \
 
 ## Evaluation Criteria
 
+### For Lambda Approach (if selected)
+1. Infrastructure as Code (50%):
+   - Proper resource organization and modularity
+   - Security best practices
+   - State management
+   - Documentation
+   - Resource optimization for Lambda, API Gateway, and RDS
+   - VPC configuration and networking
+
+2. CI/CD Pipeline (30%):
+   - Proper testing implementation
+   - Lambda packaging and deployment
+   - API Gateway configuration
+   - Error handling and notifications
+   - Pipeline efficiency and reliability
+
+3. General (20%):
+   - Code quality and organization
+   - Documentation quality
+   - Security considerations
+   - Problem-solving approach
+   - Best practices implementation
+
+### For EKS Approach (if selected)
 1. Infrastructure as Code (40%):
    - Proper resource organization and modularity
    - Security best practices
    - State management
    - Documentation
-   - Resource optimization
+   - Resource optimization for EKS and RDS
+   - VPC configuration and networking
 
 2. Kubernetes/Helm (40%):
    - Chart organization
@@ -197,8 +222,15 @@ docker run -p 8000:8000 \
    - Security considerations
    - Scalability setup
    - Documentation
+   - Secret management
 
-3. General (20%):
+3. CI/CD Pipeline (10%):
+   - Docker image building and pushing
+   - Helm deployment
+   - Error handling and notifications
+   - Pipeline efficiency and reliability
+
+4. General (10%):
    - Code quality and organization
    - Documentation quality
    - Security considerations
