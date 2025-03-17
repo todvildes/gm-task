@@ -1,2 +1,375 @@
-# devops-home-taks
-DevOps Home Taks
+# DevOps Home Task
+
+This project is designed to test various DevOps skills including AWS, Terraform, Helm, EKS, Docker, and GitHub Actions. It consists of a Python application that can be deployed both as a containerized application in EKS and as a Lambda function behind API Gateway.
+
+## Application Overview
+
+The application is a simple user management API with the following endpoints:
+
+- `GET /healthcheck` - Health check endpoint
+- `POST /populate` - Populate database with random user data
+- `GET /users` - Read users with filters (name, city, age range)
+- `DELETE /users/{user_id}` - Delete a specific user
+
+## Technical Stack
+
+- Python 3.11
+- FastAPI
+- PostgreSQL
+- Docker
+- AWS Services (EKS, Lambda, API Gateway)
+- Terraform
+- Helm
+
+## Environment Variables
+
+### Required Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@localhost:5432/users` | Yes |
+| `ENVIRONMENT` | Deployment environment (test, dev, prod) | None | Yes |
+| `AWS_DEFAULT_REGION` | AWS region | `us-east-1` | Yes for S3 storage |
+| `AWS_ACCESS_KEY_ID` | AWS access key | None | Yes for S3 storage |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key | None | Yes for S3 storage |
+| `S3_BUCKET_NAME` | S3 bucket for storing query results | `user-queries` | Yes for S3 storage |
+
+### Docker-specific Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `AWS_ENDPOINT_URL` | Endpoint URL for localstack | `http://localhost:4566` | Only for local testing with localstack |
+
+### Lambda-specific Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `AWS_LAMBDA_FUNCTION_NAME` | Lambda function name | None | Yes for Lambda |
+| `AWS_REGION` | AWS region for Lambda | `us-east-1` | Yes for Lambda |
+| `AWS_EXECUTION_ENV` | Lambda execution environment | `AWS_Lambda_python3.11` | Yes for Lambda |
+| `AWS_ENDPOINT_URL` | Endpoint URL for localstack | `http://localhost:4566` | Only for local testing with localstack |
+
+### Testing Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `PYTEST_CURRENT_TEST` | Set to `True` when running tests | None | Yes for tests |
+| `AWS_SECURITY_TOKEN` | AWS security token for testing | `testing` | Only for tests |
+| `AWS_SESSION_TOKEN` | AWS session token for testing | `testing` | Only for tests |
+
+## Task Requirements
+
+### 1. Infrastructure as Code (Terraform)
+
+Create Terraform configurations to provision the following AWS resources:
+
+1. VPC with proper networking setup:
+   - Public and private subnets
+   - NAT Gateway
+   - Internet Gateway
+   - Appropriate routing tables
+
+2. EKS cluster:
+   - Node groups with appropriate instance types
+   - Required IAM roles and policies
+   - Security groups
+
+3. RDS PostgreSQL instance:
+   - In private subnets
+   - Appropriate security groups
+   - Backup configuration
+
+4. Lambda function:
+   - Required IAM roles
+   - VPC configuration
+   - Environment variables
+
+5. API Gateway:
+   - REST API configuration
+   - Integration with Lambda
+   - Appropriate methods and resources
+
+Requirements for Terraform code:
+- Use modules to organize your code
+- Implement proper state management
+- Follow security best practices
+- Include variables for customization
+- Document your configuration
+
+### 2. Kubernetes Deployment (Helm)
+
+Create a Helm chart for deploying the application to EKS. The chart should include:
+
+1. Deployment configuration:
+   - Resource limits and requests
+   - Health checks
+   - Environment variables
+   - Proper container configuration
+
+2. Service configuration:
+   - Appropriate service type
+   - Port configuration
+
+3. Ingress configuration:
+   - TLS configuration
+   - Path routing
+
+4. Secrets management:
+   - Database credentials
+   - Other sensitive information
+
+5. Horizontal Pod Autoscaling:
+   - CPU/Memory based scaling
+   - Min/Max replicas
+
+Requirements for Helm chart:
+- Proper template organization
+- Configurable values
+- Documentation
+- Resource dependencies
+- Security considerations
+
+### 3. CI/CD Pipeline
+
+Set up a GitHub Actions workflow that:
+
+1. Tests the application
+2. Builds and pushes Docker image
+3. Deploys to both EKS and Lambda
+4. Includes proper error handling and notifications
+
+## Local Development
+
+1. Set up the environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. Set up PostgreSQL and environment variables:
+   ```bash
+   export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/users"
+   export ENVIRONMENT="dev"
+   export AWS_DEFAULT_REGION="us-east-1"
+   export AWS_ACCESS_KEY_ID="your-access-key"
+   export AWS_SECRET_ACCESS_KEY="your-secret-key"
+   export S3_BUCKET_NAME="user-queries"
+   ```
+
+3. Run the application:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+## Docker Build and Run
+
+Build the Docker image:
+```bash
+docker build -t user-api .
+```
+
+Run the Docker container with required environment variables:
+```bash
+docker run -p 8000:8000 \
+  -e DATABASE_URL="postgresql://postgres:postgres@host.docker.internal:5432/users" \
+  -e ENVIRONMENT="dev" \
+  -e AWS_DEFAULT_REGION="us-east-1" \
+  -e AWS_ACCESS_KEY_ID="your-access-key" \
+  -e AWS_SECRET_ACCESS_KEY="your-secret-key" \
+  -e S3_BUCKET_NAME="user-queries" \
+  user-api
+```
+
+## Running with Localstack
+
+1. Start localstack and PostgreSQL using docker-compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+2. Create the S3 bucket in localstack:
+   ```bash
+   aws --endpoint-url=http://localhost:4566 s3 mb s3://user-queries
+   ```
+
+3. Run the application with localstack endpoint:
+   ```bash
+   export AWS_ENDPOINT_URL="http://localhost:4566"
+   uvicorn app.main:app --reload
+   ```
+
+4. Or run the Docker container with localstack:
+   ```bash
+   docker run -p 8000:8000 \
+     -e DATABASE_URL="postgresql://postgres:postgres@host.docker.internal:5432/users" \
+     -e ENVIRONMENT="dev" \
+     -e AWS_DEFAULT_REGION="us-east-1" \
+     -e AWS_ACCESS_KEY_ID="test" \
+     -e AWS_SECRET_ACCESS_KEY="test" \
+     -e S3_BUCKET_NAME="user-queries" \
+     -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" \
+     user-api
+   ```
+
+## Evaluation Criteria
+
+1. Infrastructure as Code (40%):
+   - Proper resource organization and modularity
+   - Security best practices
+   - State management
+   - Documentation
+   - Resource optimization
+
+2. Kubernetes/Helm (40%):
+   - Chart organization
+   - Resource configuration
+   - Security considerations
+   - Scalability setup
+   - Documentation
+
+3. General (20%):
+   - Code quality and organization
+   - Documentation quality
+   - Security considerations
+   - Problem-solving approach
+   - Best practices implementation
+
+## Submission Requirements
+
+1. Fork this repository
+2. Implement the required infrastructure code
+3. Document your solution
+4. Create a pull request with your implementation
+
+## Testing Strategy
+
+The project includes several types of tests:
+
+### Docker Tests
+
+Tests the application running in a Docker container:
+
+```bash
+# Run with localstack
+AWS_ENDPOINT_URL=http://localhost:4566 pytest tests/test_docker.py -v
+```
+
+These tests verify that the API endpoints work correctly when the application is running in a Docker container.
+
+### Lambda Tests
+
+Tests the application running as an AWS Lambda function:
+
+```bash
+# Run with localstack and Lambda environment variables
+AWS_ENDPOINT_URL=http://localhost:4566 \
+AWS_LAMBDA_FUNCTION_NAME=test-function \
+AWS_REGION=us-east-1 \
+AWS_EXECUTION_ENV=AWS_Lambda_python3.11 \
+pytest tests/test_lambda.py -v
+```
+
+Our Lambda testing approach:
+
+1. **Direct Lambda Tests**: We invoke the Lambda handler function directly with API Gateway-like event payloads. This approach completely bypasses the need for API Gateway while still testing the Lambda function's behavior with realistic inputs.
+
+2. **Lambda Environment Simulation**: We set the necessary AWS Lambda environment variables (`AWS_LAMBDA_FUNCTION_NAME`, `AWS_REGION`, `AWS_EXECUTION_ENV`) to simulate the Lambda execution environment.
+
+3. **S3 Integration**: We use localstack's S3 implementation for testing the S3 storage functionality, ensuring that our Lambda function correctly interacts with S3.
+
+#### Why We Don't Use API Gateway for Testing
+
+We've intentionally removed API Gateway from our testing strategy for several reasons:
+
+- Localstack's API Gateway implementation has significant limitations
+- Direct Lambda invocation provides more reliable and consistent test results
+- The tests run faster without the API Gateway overhead
+- We get the same code coverage with direct Lambda invocation
+
+By directly invoking the Lambda handler with API Gateway-like event payloads, we get:
+
+- More reliable tests
+- Faster test execution
+- Consistent behavior across environments
+- The same code coverage as API Gateway tests
+
+### Running Tests
+
+Before running tests, make sure you have the test database set up:
+
+```bash
+# Create the test database
+docker exec -it home-task-postgres-1 psql -U postgres -c 'CREATE DATABASE users_test;'
+```
+
+To run all Lambda tests:
+
+```bash
+AWS_ENDPOINT_URL=http://localhost:4566 \
+AWS_LAMBDA_FUNCTION_NAME=test-function \
+AWS_REGION=us-east-1 \
+AWS_EXECUTION_ENV=AWS_Lambda_python3.11 \
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/users_test \
+pytest tests/test_lambda.py -v
+```
+
+To run Docker tests, you need to ensure port 8000 is available. If you're running the application with docker-compose, you'll need to stop it first or modify the test port:
+
+```bash
+# Stop the running containers if they're using port 8000
+docker compose stop app
+
+# Run Docker tests
+AWS_ENDPOINT_URL=http://localhost:4566 \
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/users_test \
+pytest tests/test_docker.py -v
+```
+
+For local testing with all components:
+
+```bash
+# Start all services using docker-compose
+docker compose up -d
+
+# Create the test database if it doesn't exist
+docker exec -it home-task-postgres-1 psql -U postgres -c 'CREATE DATABASE users_test;'
+
+# Run all tests
+AWS_ENDPOINT_URL=http://localhost:4566 \
+AWS_LAMBDA_FUNCTION_NAME=test-function \
+AWS_REGION=us-east-1 \
+AWS_EXECUTION_ENV=AWS_Lambda_python3.11 \
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/users_test \
+pytest
+```
+
+This will start PostgreSQL and localstack containers, then run all tests against them.
+
+> **Note**: If you're using docker-compose, the test database will be created automatically by the init-db.sh script. If you're running PostgreSQL separately, you'll need to create the test database manually as shown above.
+
+> **Troubleshooting**: If you encounter port conflicts with the Docker tests, ensure that no other application is using port 8000, or modify the port mapping in the test configuration.
+
+## API Documentation
+
+Once running, visit `/docs` for the Swagger UI documentation of all endpoints. 
+
+### Endpoints
+
+- `GET /healthcheck` - Health check endpoint
+  - Returns status information and environment details
+  - No parameters required
+
+- `POST /populate` - Populate database with random user data
+  - Optional `count` parameter to specify the number of users to create (default: 10)
+  - Optional `unique` parameter to ensure unique email addresses (useful for testing)
+  - Returns the number of users created
+
+- `GET /users` - Read users with filters (name, city, age range)
+  - Supports partial matching for `name` and `city` filters (e.g., "New" will match "New York" and "New Jersey")
+  - Supports range filtering for `age` with `min_age` and `max_age` parameters
+  - Results are stored in S3 and the S3 object URL is returned
+
+- `DELETE /users/{user_id}` - Delete a specific user
+  - Returns 204 No Content on success
+  - Returns 404 Not Found if the user doesn't exist

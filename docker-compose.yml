@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # Application service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/users
+      - ENVIRONMENT=dev
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - S3_BUCKET_NAME=user-queries
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      setup-localstack:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Localstack for AWS services
+  localstack:
+    image: localstack/localstack:3.0.0
+    environment:
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=us-east-1
+      - DEBUG=1
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Setup service to initialize localstack
+  setup-localstack:
+    image: amazon/aws-cli:2.13.0
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      aws --endpoint-url=http://localstack:4566 s3 mb s3://user-queries &&
+      echo 'Localstack initialized successfully'
+      "
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  localstack-data: 
