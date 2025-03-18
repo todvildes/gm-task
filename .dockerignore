@@ -48,8 +48,62 @@ htmlcov/
 .DS_Store
 .localstack/
 docker-compose.override.yml
-
+lambda_deployment_package.zip
+lambda_package/
+terraform/
 # Documentation
 docs/
 *.md
-!README.md 
+!README.md
+
+# Python virtual environments
+venv/
+env/
+.env/
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Local development settings
+.env
+.env.local
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Lambda deployment files
+lambda_package/
+lambda_deployment_package.zip
+
+# Terraform
+terraform/
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# AWS
+.aws/
+
+# Logs
+logs/
+*.log 

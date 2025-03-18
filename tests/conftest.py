@@ -1,5 +1,6 @@
 import pytest
 import os
+import sys
 import docker
 import boto3
 import time
@@ -7,7 +8,17 @@ import traceback
 from pathlib import Path
 from typing import Generator
 import requests
-from sqlalchemy import create_engine, text
+
+# Add the project root directory to sys.path
+# This will allow imports to work without 'app.' prefix
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+    # Also add the app directory directly to handle imports like 'from database import Base'
+    sys.path.insert(0, os.path.join(project_root, 'app'))
+
+# Now import the modules (these will use the modified sys.path)
+from sqlalchemy import create_engine, text, MetaData
 from sqlalchemy.orm import Session
 from app.database import Base
 from app.models import User
@@ -87,27 +98,27 @@ def postgres_container(docker_client):
 
 @pytest.fixture(scope="session")
 def test_db_engine():
-    """Create a test database engine"""
+    """Create a test database engine with a separate metadata instance"""
+    # Import here to avoid import loops
+    from app.database import Base
+    from sqlalchemy import MetaData
+    
+    # Create a new engine for tests
     database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/users_test")
     engine = create_engine(database_url)
     
-    # Create database if it doesn't exist
-    default_db_url = database_url.rsplit('/', 1)[0] + '/postgres'
-    temp_engine = create_engine(default_db_url)
-    conn = temp_engine.connect()
-    conn.execute(text("COMMIT"))  # Close any open transaction
+    # Create a new metadata for tests to avoid conflicts
+    test_metadata = MetaData()
+    for table in Base.metadata.tables.values():
+        table.to_metadata(test_metadata)
     
-    try:
-        conn.execute(text("CREATE DATABASE users_test"))
-    except Exception as e:
-        print(f"Database creation error (can be ignored if db exists): {e}")
-    finally:
-        conn.close()
-        temp_engine.dispose()
+    # Create tables using test metadata
+    test_metadata.create_all(bind=engine)
     
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-    return engine
+    yield engine
+    
+    # Optionally drop tables after tests
+    # test_metadata.drop_all(bind=engine)
 
 @pytest.fixture
 def db_session(test_db_engine) -> Generator[Session, None, None]:

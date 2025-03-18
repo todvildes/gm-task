@@ -48,6 +48,7 @@ The application is a simple user management API with the following endpoints:
 | `AWS_REGION` | AWS region for Lambda | `us-east-1` | Yes for Lambda |
 | `AWS_EXECUTION_ENV` | Lambda execution environment | `AWS_Lambda_python3.11` | Yes for Lambda |
 | `AWS_ENDPOINT_URL` | Endpoint URL for localstack | `http://localhost:4566` | Only for local testing with localstack |
+| `API_GATEWAY_BASE_PATH` | Base path for API Gateway | `/` | For Lambda with API Gateway |
 
 ### Testing Environment Variables
 
@@ -181,6 +182,44 @@ docker run -p 8000:8000 \
      -e AWS_ENDPOINT_URL="http://host.docker.internal:4566" \
      user-api
    ```
+
+## Lambda Deployment
+
+### Creating a Lambda Deployment Package
+
+This repository includes a script to create a Lambda deployment package that properly bundles the application code with its dependencies for AWS Lambda:
+
+```bash
+./create_lambda_package.sh
+```
+
+The script performs the following operations:
+1. Creates a package directory and copies all Python files from the app directory to the root level
+2. Filters the requirements file to exclude packages not needed in Lambda (like localstack and pytest)
+3. Installs dependencies with Lambda-specific flags:
+   - Uses the manylinux2014_x86_64 platform for compatibility
+   - Targets Python 3.11
+   - Only includes binary packages
+4. Removes unnecessary files to reduce package size (caches, tests, etc.)
+5. Creates a ZIP file ready for Lambda deployment
+
+After running the script, you'll have a `lambda_deployment_package.zip` file that can be deployed to AWS Lambda either manually or via Terraform.
+
+### Lambda Handler Configuration
+
+When configuring your Lambda function, use `main.lambda_handler` as the handler. This points to the `lambda_handler` function in the `main.py` file, which is preconfigured to work with API Gateway.
+
+### Required Environment Variables for Lambda
+
+Make sure to set the following environment variables in your Lambda function configuration:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Connection string to your RDS instance |
+| `ENVIRONMENT` | Deployment environment (dev, prod) |
+| `AWS_REGION` | The region where your Lambda is deployed |
+| `S3_BUCKET_NAME` | Name of the S3 bucket for storing query results |
+| `API_GATEWAY_BASE_PATH` | Base path for API Gateway (e.g., `/dev` for dev stage) |
 
 ## Evaluation Criteria
 
