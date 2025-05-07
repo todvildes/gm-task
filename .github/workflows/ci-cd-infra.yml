@@ -1,0 +1,80 @@
+name: Terraform CI CD Pipeline for Deploying AWS Resources
+run-name: ${{ github.actor }} has triggered the pipeline
+
+on:
+  push:
+    branches:
+      - 'main'
+
+env:
+  AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  build-infra-state:
+    name: build-infra-state
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ./infra/state
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+        working-directory: ./infra/state
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan
+        working-directory: ./infra/state
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply --auto-approve
+        working-directory: ./infra/state
+
+  build-infra-vpc-and-s3:
+    needs: build-infra-state
+    name: build infra vpc and s3 bucket
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init VPC
+        id: init
+        run: terraform init
+        working-directory: ./infra/vpc
+      - name: Terraform Validate VPC
+        id: validate
+        run: terraform validate
+        working-directory: ./infra/vpc
+      - name: Terraform Plan VPC
+        id: plan
+        run: terraform plan
+        working-directory: ./infra/vpc
+      - name: Terraform Apply VPC
+        id: apply
+        run: terraform apply --auto-approve
+        working-directory: ./infra/vpc
+
+      - name: Terraform Init S3
+        id: init
+        run: terraform init
+        working-directory: ./infra/s3
+      - name: Terraform Validate S3
+        id: validate
+        run: terraform validate
+        working-directory: ./infra/s3
+      - name: Terraform Plan S3
+        id: plan
+        run: terraform plan
+        working-directory: ./infra/s3
+      - name: Terraform Apply S3
+        id: apply
+        run: terraform apply --auto-approve
+        working-directory: ./infra/s3

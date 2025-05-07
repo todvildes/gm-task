@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  DATABASE_URL: {{ .Values.db.url | quote }}
+  ENVIRONMENT: {{ .Values.environment | quote }}
+  AWS_DEFAULT_REGION: {{ .Values.aws.region | quote }}
+  S3_BUCKET_NAME: {{ .Values.aws.s3.bucket.name | quote }}
